@@ -19,7 +19,7 @@ public class Gomoku extends JFrame implements ActionListener{
                                    new JMenuItem("Replay Game"),new JMenuItem("Setting"),new JMenuItem("Exit")};
     private JMenuItem[] subMenu2={new JMenuItem("How to play"),new JMenuItem("About"),new JMenuItem("Backtrack")};
     private static final int WIDTH = 430;
-    private static final int HEIGHT = 520;
+    private static final int HEIGHT = 530;
     private Wuziqi gamePanel; //panel for the actual game
     private JPanel botPanelPanel; //bottom panel to display information or waiting message
     private InformationPanel bottomPanel;//the information
@@ -83,6 +83,7 @@ public class Gomoku extends JFrame implements ActionListener{
 	    catch(IOException | NoSuchElementException ee){
 	    	playMusic = true; //default true
 	    }
+	    playMusic=false; //disable music
 	    if (playMusic) //loop if true
 	    	backGroundMusic.loop();
 

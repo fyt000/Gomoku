@@ -14,7 +14,7 @@ public class Wuziqi extends JPanel{
 	protected Color boardColour;//colour of the board
 	protected Color colourWhite=Color.WHITE; //Color.WHITE
 	protected Color colourBlack=Color.BLACK; //Color.BLACK
-	private int difficulty; //1~3, the diffuculty
+	private int difficulty; //1~3, the difficulty
 	private boolean vsAI;// is vsAI?
 	private int totalTurns;//the total turns
 	private boolean goFirst;//player goes first
@@ -65,8 +65,7 @@ public class Wuziqi extends JPanel{
 			aiColour=0;
 		}
 		difficulty=dRate;
-		searchDepth=dRate*2; //double the difficulty
-		//searchDepth = 4;
+		searchDepth=dRate*2-1; //double the difficulty
 		board=new int[N][N];
 		clearBoard(); //clear the board/initialize
 		curTurn=true;//balck go first
@@ -131,7 +130,7 @@ public class Wuziqi extends JPanel{
 		totalTurns=0;
 	}
 
-	void placePiece(int x,int y,boolean black){ //no idea why I passed the third para
+	void placePiece(int x,int y,boolean black){ 
 		totalTurns++;//add 1 turn
 		int side=black?0:1; //if it is black then 0 else 1
 		board[x][y]=side;//assign it to the board
@@ -141,7 +140,7 @@ public class Wuziqi extends JPanel{
 		curTurn=nexTurn; //switch turn when a piece is placed
 		nexTurn=!nexTurn; //next turn swith as well
 		info.updateInfo(); //update the info in informationPanel
-		if (totalTurns==1&&goFirst){ //set the search border, not working well
+		if (totalTurns==1&&goFirst){ //set the search border
 			if (x-1>=0)
 				x_min=x-1;
 			if (x-1<=15)
@@ -315,8 +314,9 @@ public class Wuziqi extends JPanel{
 	public void loadGame(String fileName){
 		readFile(fileName);//read file first
 		clearBoard();
-		for (int i=0;i<repBuffer.size();i++){//than read the repBuffer and place the pieces
-			Piece cp=this.repBuffer.get(i);
+		for (int i=0;i<repBuffer.size();i++){//then read the repBuffer and place the pieces
+			Piece cp=repBuffer.get(i);
+			resetMaxMin(cp.x,cp.y);
 			placePiece(cp.x,cp.y,cp.side==0?true:false);
 		}
 		repaint();
@@ -497,62 +497,6 @@ public class Wuziqi extends JPanel{
 				}
 
 			if (totalTurns==2&&aiColour==0){ //ai go first, third step determined here
-				/*
-				if (board[6][6]==pColour||board[8][6]==pColour||board[6][8]==pColour||board[8][8]==pColour){
-				    //if 2nd piece is on the diagonals
-				    int [][]diagPos = new int[][] {{-2,-2},{-2,-1},{-2,0},{-2,1},{-2,2},{-1,-1},{-1,0},
-								    {0,-2},{1,-2},{1,-1},{1,0},{2,-2},{2,0}}; 
-				    //the possible positions from (7,7) to place at
-				    //for case 0, where the player placed at (6,8)
-				    int t=-1;
-				    if (board[6][6]==pColour) //determine which case
-					t=1;
-				    else if(board[6][8]==pColour)
-					t=0;
-				    else if (board[8][6]==pColour)
-					t=2;
-				    else if(board[8][8]==pColour)
-					t=3;
-				    int coeX=1;//coefficients (-1 or 1)
-				    int coeY=1;
-				    switch(t){
-					case 0:break;
-					case 1:coeY=-1;break; //reflect Y-coord
-					case 2:coeX=-1;coeY=-1;break;//reflect both
-					case 3:coeX=-1;break;//reflect the x-coord
-				    }
-				    //System.out.println("case is "+t);
-				    int cs = randomInt(0,12);
-				    a = new Piece(7+coeX*diagPos[cs][0],7+coeY*diagPos[cs][1],curTurn);//7 is the middle piece
-				}
-				else if(board[7][8]==pColour||board[7][6]==pColour||board[6][7]==pColour||board[8][7]==pColour){
-				    //if player placed on a vertical/horizontal position
-				    int[][]vertPos = new int[19][2]; //19 cases
-				    int idx = 0;//index
-				    for (int i=-2;i<3;i++)//almost all position around the middle are good
-					for (int j=-2;j<3;j++){
-					    if ((i==-1&&j==0)||(i==1&&j==0)||(i==-1&&j==2)||(i==1)&&(j==2)||(i==0)&&(j==0)||(i==0)&&(j==1))
-						continue; //except for these
-					    vertPos[idx][0]=i;
-					    vertPos[idx++][1]=j;
-					}
-				    int t=-1;
-				    if (board[7][8]==pColour) //determine the case
-					t=0;
-				    else if (board[7][6]==pColour)
-					t=1;
-				    else if (board[6][7]==pColour)
-					t=2;
-				    else if (board[8][7]==pColour)
-					t=3;
-				    int cs = randomInt(0,18);
-				    switch(t){
-					case 0: a =new Piece(7+vertPos[cs][0],7+vertPos[cs][1],curTurn);break;
-					case 1: a =new Piece(7+(-1)*vertPos[cs][0],7+(-1)*vertPos[cs][1],curTurn);break; //reflect both xy
-					case 2: a =new Piece(7+(-1)*vertPos[cs][1],7+vertPos[cs][0],curTurn);break;//inverse and reflect x
-					case 3: a =new Piece(7+vertPos[cs][1],7+(-1)*vertPos[cs][0],curTurn);break;//inverse and reflect y
-				    }
-				}*/
 				if (board[6][6]==pColour||board[8][6]==pColour
 						||board[6][8]==pColour||board[8][8]==pColour){
 					//gaining great advantage at the start, when white placing on diagonals
@@ -578,7 +522,7 @@ public class Wuziqi extends JPanel{
 						a=new Piece(8,6,curTurn);
 				}
 				else
-					a=placeFinderX((curTurn?0:1));
+					a=placeFinderY((curTurn?0:1));
 			}
 			else if (totalTurns==1&&aiColour==1&&(difficulty==2||difficulty==3)){ //place piece near first piece
 				wait=false;
@@ -609,16 +553,13 @@ public class Wuziqi extends JPanel{
 					}
 				}
 			}
-			else
-				a=placeFinderX((curTurn?0:1));
+			else{
+				//a=placeFinderX((curTurn?0:1));
+				a=placeFinderY((curTurn?0:1));
+			}
 			placePiece(a.x,a.y,curTurn);
 		}
 		wait=false;
-		/*
-		wait = false;
-		info.reWait();
-		info.repaint();
-		*/
 	}
 
 	//old algorithm 
@@ -668,196 +609,119 @@ public class Wuziqi extends JPanel{
 	//********************min-max search + alpha-beta prune******************************//
 	//for difficulty > 1
 	private int findTypeX(int a,int b,int s){
-		int t;
-		t=findType(a,b,s);
-		return t;
+		//int t;
+		//t=findType(a,b,s);
+		return findType(a,b,s);
 	}
 
 	public void resetMaxMin(int x,int y){
 		if (x-1>=0)
 			x_min=(x_min<x-1?x_min:x-1);
-		if (x+1<=15)
+		if (x+1<=14)
 			x_max=(x_max>x+1?x_max:x+1);
 		if (y-1>=0)
 			y_min=(y_min<y-1?y_min:y-1);
-		if (y+1<=15)
+		if (y+1<=14)
 			y_max=(y_max>y+1?y_max:y+1);
+		//x_min=0;x_max=14;y_min=0;y_max=14;
 	}
 
-	private Piece placeFinderX(int bwf){ //main call to start the search
-		int x,y,mx=-100000000;
-		x=y=-1;
-		int[][] bests=getBests(bwf); //find the best nodes
-		for (int k=0;k<bests.length;k++){//iterate the nodes
-			int i=bests[k][0];
-			int j=bests[k][1];
-			if (findTypeX(i,j,aiColour)==1){ //if able to get 5 for ai return
-				//old findTypeX(i, j,aiColour) == 1
-				x=i;
-				y=j;
-				break;
-			}
-			if (findTypeX(i,j,pColour)==1){ //then check for human
-				//old findTypeX(i, j,pColour) == 1
-				x=i;
-				y=j;
-				break;
-			}
-			int temp1=x_min,temp2=x_max,temp3=y_min,temp4=y_max;
-			board[i][j]=bwf;
-			resetMaxMin(i,j);
-			int t=findMin(-100000000,100000000,searchDepth);
-			board[i][j]=-1;
-			x_min=temp1;
-			x_max=temp2;
-			y_min=temp3;
-			y_max=temp4;
-			if (t-mx>500||Math.abs(t-mx)<500&&randomTest(3)){ //if difference in value is lesser tham 500
-				x=i;
-				y=j;
-				mx=t;
-			}
-		}
-		return new Piece(x,y,aiColour);
-	}
-
-	private int evaluate(){ //evaluation of the current board
-		int v=0;
-		int mt_c=1,mt_m=1; //coefficient
-		if ((curTurn?0:1)==pColour) //if player's turn
-			mt_m=2; //set to double
-		else
-			mt_c=2;
-		int i_min=(x_min==0?x_min:x_min-1);//border values
-		int j_min=(y_min==0?y_min:y_min-1);
-		int i_max=(x_max==15?x_max:x_max+1);
-		int j_max=(y_max==15?y_max:y_max+1);
-		for (int x=i_min;x<i_max;x++)
-			//only examine the pieces in the border
-			for (int y=j_min;y<j_max;y++)
-				if (board[x][y]==-1){ //blank piece
-					int type=findTypeX(x,y,aiColour); //get the type for ai
-					/*
-					        if(type == 1)  
-					        	v += 30 * mt_c * getMark(type);
-					        else if(type == 2)					
-					        	v += 10 * mt_c * getMark(type);
-					        else if(type == 3)
-					        	v += 3 * mt_c * getMark(type);
-					        else
-					        	v += mt_c * getMark(type);
-					*/
-					v+=mt_c*typeScore(type); //add evaluation score by coefficient*score of type
-					//player
-					type=findTypeX(x,y,pColour);
-					/*
-					        if(type == 1)
-					        	v -= 30 * mt_m * getMark(type);
-					        else if(type == 2)					
-					        	v -= 10 * mt_m * getMark(type);
-					        else if(type == 3)
-					        	v -= 3 * mt_m * getMark(type);
-					        else
-					        	v -= mt_m * getMark(type);
-					  */
-					v-=mt_m*typeScore(type); //subtract for human player
-				}
-		//System.out.println(v);
-		return v;
-	}
-
-	protected int findMax(int alpha,int beta,int step){ //the findMax function
-		//followed the algorithm minimax alpha beta prune search
-		int mx=alpha;
-		// if(true) return 0;
-		if (step==0){
-			return evaluate();
-		}
-		int[][] rt=getBests(aiColour); //find the best nodes to append
-		for (int z=0;z<rt.length;z++){
-			int i=rt[z][0];
-			int j=rt[z][1];
-			if (findTypeX(i,j,aiColour)==1) //if type 1 (five in a row) is found
-				return 20*(typeScore(1)+step*100);//return max score
-			board[i][j]=aiColour;
-			int temp1=x_min,temp2=x_max,temp3=y_min,temp4=y_max;
-			resetMaxMin(i,j);
-			int t=findMin(mx,beta,step-1); //recursively call Min(which calls Max)
-			board[i][j]=-1; //recover to blank
-			//set boundaries
-			x_min=temp1;
-			x_max=temp2;
-			y_min=temp3;
-			y_max=temp4;
-			//beta prune
-			if (t>mx)
-				mx=t;
-			if (mx>=beta)
-				return mx;
-		}
-		return mx;
-	}
-
-	protected int findMin(int alpha,int beta,int step){
-		int mi=beta;
-		// if(true) return 0;
-		if (step==0){
-			return evaluate();
-		}
-		int[][] rt=getBests(pColour);
-		for (int z=0;z<rt.length;z++){
-			int i=rt[z][0];
-			int j=rt[z][1];
-			if (findTypeX(i,j,pColour)==1)
-				return -20*(typeScore(1)+step*100);
-			int temp1=x_min,temp2=x_max,temp3=y_min,temp4=y_max;
-			board[i][j]=pColour;
-			// System.out.println("error....");
-			resetMaxMin(i,j);
-			int t=findMax(alpha,mi,step-1);
-			board[i][j]=-1;
-			x_min=temp1;
-			x_max=temp2;
-			y_min=temp3;
-			y_max=temp4;
-			if (t<mi)
-				mi=t;
-			//beta
-			if (mi<=alpha){
-				return mi;
-			}
-		}
-		return mi;
-	}
-
-	private int[][] getBests(int bwf){ //get the best pieces
-		int i_min=(x_min==0?x_min:x_min-1);
-		int j_min=(y_min==0?y_min:y_min-1);
-		int i_max=(x_max==15?x_max:x_max+1);
-		int j_max=(y_max==15?y_max:y_max+1);
-		//x y max min boundary same not to work properly
-		int n=0; //index
-		int type_1,type_2;
-		int[][] rt=new int[(i_max-i_min)*(j_max-j_min)][3];
-		//System.out.println("im "+i_min+" jm "+j_min+" im "+i_max+" jm "+j_max);
-		for (int i=i_min;i<i_max;i++)
-			for (int j=j_min;j<j_max;j++)
+	//Felix 2015-10-23
+	//rewriting the whole algorithm
+	private Piece placeFinderY(int cur){
+		int px=-1,py=-1;
+		int maxVal=-15*15*10000-1;
+		int curXMax=x_max,curXMin=x_min,curYMax=y_max,curYMin=y_min;
+		//System.out.println(x_min+" "+x_max+" "+y_min+" "+y_max);
+		for (int i=x_min;i<=x_max;i++)
+			for (int j=y_min;j<=y_max;j++){
 				if (board[i][j]==-1){
-					type_1=findTypeX(i,j,bwf); //get type
-					//System.out.println("type 1: "+type_1);
-					type_2=findTypeX(i,j,1-bwf);//get type
-					//System.out.println("type 2: "+type_2);
-					rt[n][0]=i;
-					rt[n][1]=j;
-					rt[n][2]=typeScore(type_1)+typeScore(type_2); //return its mark
-					n++;
+					board[i][j]=aiColour;
+					resetMaxMin(i,j);
+					int val=minMax(3,i,j,false);
+					board[i][j]=-1;
+					x_max=curXMax;x_min=curXMin;y_max=curYMax;y_min=curYMin;
+					if (val>maxVal){
+						px=i;
+						py=j;
+						maxVal=val;
+					}
 				}
-		Arrays.sort(rt,new ArrComparator()); //sort the 2Darray
-		int size=7>n?n:7;
-		int[][] bests=new int[size][3];
-		System.arraycopy(rt,0,bests,0,size);
-		return bests;
+			}
+		return new Piece(px,py,cur);
 	}
+
+	//1 max, 0 min
+	private int minMax(int depth,int px,int py,boolean turn){
+		int theMax=15*15*10000;
+		if (depth==0){
+			return evalBoard(board[px][py]);
+		}
+		int curXMax=x_max,curXMin=x_min,curYMax=y_max,curYMin=y_min;
+		if (turn){
+			int maxVal=-1*theMax-1;
+			for (int i=x_min;i<=x_max;i++)
+				for (int j=y_min;j<=y_max;j++){
+					if (board[i][j]==-1){
+						board[i][j]=aiColour;
+						if (findType(i,j,aiColour)==1){
+							board[i][j]=-1;
+							return theMax;
+						}
+						else{
+							resetMaxMin(i,j);
+							int val=minMax(depth-1,i,j,false);
+							board[i][j]=-1;
+							x_max=curXMax;x_min=curXMin;y_max=curYMax;y_min=curYMin;
+							if (val>maxVal)
+								maxVal=val;
+						}
+					}
+				}
+			return maxVal;
+		}
+		else{
+			int minVal=theMax+1;
+			for (int i=x_min;i<=x_max;i++)
+				for (int j=y_min;j<=y_max;j++){
+					if (board[i][j]==-1){
+						board[i][j]=pColour;
+						
+						if (findType(i,j,pColour)==1){
+							board[i][j]=-1;
+	
+							return -1*theMax;
+						}
+						else{
+							resetMaxMin(i,j);
+							int val=minMax(depth-1,i,j,true);
+							x_max=curXMax;x_min=curXMin;y_max=curYMax;y_min=curYMin;
+							board[i][j]=-1;
+							if (val<minVal)
+								minVal=val;
+						}
+					}
+				}		
+			return minVal;
+		}
+	}
+
+	private int evalBoard(int p){
+		int val=0;
+		for (int i=0;i<15;i++)
+			for (int j=0;j<15;j++)
+				if (board[i][j]==aiColour)
+					val+=typeScoreY(findType(i,j,aiColour));
+		
+		for (int i=0;i<15;i++)
+			for (int j=0;j<15;j++)
+				if (board[i][j]==pColour)
+					val-=typeScoreY(findType(i,j,pColour));
+		
+		//System.out.println(val);
+		return val;
+	}
+
 
 	//*******************Methods used in all difficulties******************************//
 	int findType(int x,int y,int s){
@@ -926,85 +790,33 @@ public class Wuziqi extends JPanel{
 	}
 
 	private int typeScore(int c){ //give score according to the type
-		int typeMark[]={100000,25000,8000,3000,2000,800,200,110,80,40,10,1};
+		final int typeMark[]={100000,25000,8000,3000,2000,800,200,110,80,40,10,
+				1};
 		return typeMark[c-1];
 	}
 
-	private int[] pieceCounter(int x,int y,int direction){ //same algorithm as last year
-		//but code more simple and easier to understand
-		//flaw: can't find space
-		int side=board[x][y];
-		int counterSide=side==0?1:0; //the counter side of side
-		int dx=0,dy=0;
-		switch (direction){
-		//x y below should swap place
-		case 1:
-			dx=0;
-			dy=1;
-			break; //horizontal
-		case 2:
-			dx=1;
-			dy=0;
-			break;//vertical
-		case 3:
-			dx=1;
-			dy=1;
-			break;// diagonally "\"
-		case 4:
-			dx=-1;
-			dy=1;
-			break;//diagonally "/"
-		}
-		int lp=0; //left piece
-		int rp=0; //right piece
-		int leftClose=0; //1 for left being blocked
-		int rightClose=0;
-		int i; //index
-		boolean space=false;
-		for (i=1;i<5;i++){ //go left-dir 5 pieces
-			int nx=x,ny=y;
-			nx=x+dx*i;//find new coordinate of x
-			ny=y+dy*i;//y
-			if (nx>=0&&nx<=14&&ny>=0&&ny<=14){ //make sure array not out of index
-				if (getBoard(nx,ny)==side) //same piece
-					lp++; //counter + 1
-				else
-					break;//break if not
-			}
-			else
-				break;//out of boundary, break
-		}
-		int fx=x+dx*i,fy=y+dy*i;//final x and final y
-		if (getBoard(fx,fy)==3||getBoard(fx,fy)==counterSide) //check if it is closed
-			leftClose=1;
-
-		//other direction
-		for (i=1;i<5;i++){
-			int nx=x,ny=y;
-			nx=x-dx*i;
-			ny=y-dy*i;
-			if (nx>=0&&nx<=14&&ny>=0&&ny<=14){
-				if (getBoard(nx,ny)==side)
-					rp++;
-				else
-					break;
-			}
-			else
-				break;
-		}
-		fx=x-dx*i;
-		fy=y-dy*i;
-		if (getBoard(fx,fy)==3||getBoard(fx,fy)==counterSide)
-			rightClose=1;
-		int situation[]=new int[2];
-		situation[0]=lp+rp+1;
-		situation[1]=rightClose+leftClose;
-		return situation;
+	/*
+	 * 1: 5 in a row
+	 * 2: open 4 || double half-close 4 || half-close 4 + open 3
+	 * 3: double open 3
+	 * 4: half-open 3 + open 3
+	 * 5: open 3
+	 * 6: half-open 4 //fix return 5
+	 * 7: double open 2
+	 * 8: half-open 3
+	 * 9: half-open 2 + open 2
+	 * 10: open 2
+	 * 11: half open 2
+	 * 12: other
+	 */
+	private int typeScoreY(int c){ //give score according to the type
+		final int typeMark[]={10000,10000,8000,350,300,200,100,25,25,20,5,1};
+		return typeMark[c-1];
 	}
 
 	protected int[] pieceCounterX(int x,int y,int direction,int s){ //new counter, more powerful than the one last year
 		int side=s; //side = black or white (1 or 2)
-		int counterSide=side==0?1:0; //the counter side of side
+
 		int dx=0,dy=0;
 
 		switch (direction){
@@ -1189,9 +1001,5 @@ public class Wuziqi extends JPanel{
 		return Min+(int)(Math.random()*((Max-Min)+1));
 	}
 
-	private boolean randomTest(int kt){ //random test
-		Random rm=new Random();
-		return rm.nextInt()%kt==0;
-	}
 
 }

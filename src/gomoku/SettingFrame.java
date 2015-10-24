@@ -10,7 +10,7 @@ public class SettingFrame extends JDialog
                              implements ActionListener {
     int ok = 0;
     int R = 250,G =235, B=215;
-    int music = 1;
+    int music = 0;
     int style = 0;
     int dT=1000;
     JTextField rv;
