@@ -6,15 +6,15 @@ import javax.swing.*;
 import java.io.*;
 import java.util.*;
 
-public class NewGameFrame extends JDialog implements ActionListener {
-	int hVsAi = 1;// true for human vs ai
-	int difficulty = 2;// 1,2,3
-	int first = 1;// player first or not
-	boolean ok = false;
-	JButton okButton = new JButton("Start");
+public class NewGameFrame extends JDialog implements ActionListener{
+	int hVsAi=1;// true for human vs ai
+	int difficulty=2;// 1,2,3
+	int first=1;// player first or not
+	boolean ok=false;
+	JButton okButton=new JButton("Start");
 
-	public NewGameFrame(Frame owner, String title) {
-		super(owner, title, true);
+	public NewGameFrame(Frame owner,String title){
+		super(owner,title,true);
 		// setAlwaysOnTop( true );
 		setLocationByPlatform(true);
 		// super(new BorderLayout());
@@ -30,34 +30,34 @@ public class NewGameFrame extends JDialog implements ActionListener {
 		// Container p = getContentPane();
 		// setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		// add all radio buttons
-		JRadioButton ha = new JRadioButton("Human Vs Ai");
+		JRadioButton ha=new JRadioButton("Human Vs Ai");
 		ha.setActionCommand("Human Vs Ai");
 		ha.setSelected(true);
-		JRadioButton hh = new JRadioButton("Human Vs Human");
+		JRadioButton hh=new JRadioButton("Human Vs Human");
 		hh.setActionCommand("Human Vs Human");
 
-		JRadioButton d1 = new JRadioButton("Beginner");
+		JRadioButton d1=new JRadioButton("Beginner");
 		d1.setActionCommand("Beginner");
-		JRadioButton d2 = new JRadioButton("Intermediate");
+		JRadioButton d2=new JRadioButton("Intermediate");
 		d2.setActionCommand("Intermediate");
 		d2.setSelected(true);
-		JRadioButton d3 = new JRadioButton("Advanced");
+		JRadioButton d3=new JRadioButton("Advanced");
 		d3.setActionCommand("Advanced");
 
-		JRadioButton g1 = new JRadioButton("Go First");
+		JRadioButton g1=new JRadioButton("Go First");
 		g1.setActionCommand("Go First");
 		g1.setSelected(true);
-		JRadioButton g2 = new JRadioButton("Go Second");
+		JRadioButton g2=new JRadioButton("Go Second");
 		g2.setActionCommand("Go Second");
 
-		ButtonGroup group1 = new ButtonGroup(); // group the radio buttons
+		ButtonGroup group1=new ButtonGroup(); // group the radio buttons
 		group1.add(ha);
 		group1.add(hh);
-		ButtonGroup group2 = new ButtonGroup();
+		ButtonGroup group2=new ButtonGroup();
 		group2.add(d1);
 		group2.add(d2);
 		group2.add(d3);
-		ButtonGroup group3 = new ButtonGroup();
+		ButtonGroup group3=new ButtonGroup();
 		group3.add(g1);
 		group3.add(g2);
 		// add listener for all
@@ -69,7 +69,7 @@ public class NewGameFrame extends JDialog implements ActionListener {
 		g1.addActionListener(this);
 		g2.addActionListener(this);
 
-		JPanel radioPanel = new JPanel(new GridLayout(4, 3, 10, 0));
+		JPanel radioPanel=new JPanel(new GridLayout(4,3,10,0));
 		// add everything to main panel
 		radioPanel.add(new JLabel(" Mode"));
 		radioPanel.add(new JLabel(" Difficulty"));
@@ -87,33 +87,33 @@ public class NewGameFrame extends JDialog implements ActionListener {
 		radioPanel.add(d3);// difficulty 3
 		radioPanel.add(new JLabel(""));
 
-		add(radioPanel, BorderLayout.CENTER);
-		okButton = new JButton("Start ");
+		add(radioPanel,BorderLayout.CENTER);
+		okButton=new JButton("Start ");
 		okButton.setActionCommand("startGame");
 		okButton.addActionListener(this);
-		add(okButton, BorderLayout.SOUTH);
+		add(okButton,BorderLayout.SOUTH);
 		// this.setBorder(BorderFactory.createEmptyBorder(5,20,5,20));
 
 	}
 
-	public void actionPerformed(ActionEvent e) {
-		String cmd = e.getActionCommand();
+	public void actionPerformed(ActionEvent e){
+		String cmd=e.getActionCommand();
 		if (cmd.equals("Human Vs Ai"))
-			hVsAi = 1;// true
+			hVsAi=1;// true
 		else if (cmd.equals("Human Vs Human"))
-			hVsAi = 0;// false
+			hVsAi=0;// false
 		if (cmd.equals("Beginner")) // read the difficulty
-			difficulty = 1;
+			difficulty=1;
 		else if (cmd.equals("Intermediate"))
-			difficulty = 2;
+			difficulty=2;
 		else if (cmd.equals("Advanced"))
-			difficulty = 3;
+			difficulty=3;
 		if (cmd.equals("Go First"))
-			first = 1;// true
+			first=1;// true
 		else if (cmd.equals("Go Second"))
-			first = 0;// false
-		if (cmd.equals("startGame")) {
-			ok = true; // can access to the data now
+			first=0;// false
+		if (cmd.equals("startGame")){
+			ok=true; // can access to the data now
 			setVisible(false);
 			// this.dispose();//close frame
 		}
