@@ -1,11 +1,12 @@
 package gomoku;
 
 import javax.swing.*;
+
 import java.awt.*;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.*;
-import java.util.Random;
+import java.util.List;
 import java.awt.event.*;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
@@ -23,8 +24,8 @@ public class Wuziqi extends JPanel{
 	private int aiColour;//ai's colour
 	private boolean nexTurn;//next turn flag, true for black false for white
 	private int searchDepth; //the depth the AI will search (difficulty*2)
-	protected int x_max=15,x_min=0; //search boundary, not seem to work well
-	protected int y_max=15,y_min=0;
+	protected int xMax=14,xMin=0; //search boundary, not seem to work well
+	protected int yMax=14,yMin=0;
 	private final static int N=15;//the size of board, did not use much of this
 	private java.util.List<Piece> list=new ArrayList<Piece>();//not awt list, to store the steps taken in order
 	private java.util.List<Piece> repBuffer=new ArrayList<Piece>();//replay/save buffer
@@ -121,10 +122,10 @@ public class Wuziqi extends JPanel{
 			}
 		list=new ArrayList<Piece>(); //clear ArrayList by instantiating a new one
 		//boundary value set to 0
-		x_max=15;
-		x_min=0;
-		y_max=15;
-		y_min=0;
+		xMax=14;
+		xMin=0;
+		yMax=14;
+		yMin=0;
 		curTurn=true;//balck go first
 		nexTurn=false;//next turn is white
 		totalTurns=0;
@@ -140,19 +141,21 @@ public class Wuziqi extends JPanel{
 		curTurn=nexTurn; //switch turn when a piece is placed
 		nexTurn=!nexTurn; //next turn swith as well
 		info.updateInfo(); //update the info in informationPanel
+		/*
 		if (totalTurns==1&&goFirst){ //set the search border
 			if (x-1>=0)
-				x_min=x-1;
+				xMin=x-1;
 			if (x-1<=15)
-				x_max=x+1;
+				xMax=x+1;
 			if (y-1>=0)
-				y_min=y-1;
+				yMin=y-1;
 			if (y-1<=15)
-				y_max=y+1;
+				yMax=y+1;
 		}
 		else{
 			resetMaxMin(x,y);
-		}
+		}*/
+		resetMaxMin(x,y);
 		//revalidate();
 		//validate();
 		if (!wait&&difficulty>1&&totalTurns>1) //if player placign the piece
@@ -562,7 +565,7 @@ public class Wuziqi extends JPanel{
 		wait=false;
 	}
 
-	//old algorithm 
+	//old algorithm from 2010
 	private Piece placeFinder(){
 		int xyValue[][]=new int[15][15];
 		for (int x=0;x<15;x++)
@@ -616,14 +619,14 @@ public class Wuziqi extends JPanel{
 
 	public void resetMaxMin(int x,int y){
 		if (x-1>=0)
-			x_min=(x_min<x-1?x_min:x-1);
+			xMin=(xMin<x-1?xMin:x-1);
 		if (x+1<=14)
-			x_max=(x_max>x+1?x_max:x+1);
+			xMax=(xMax>x+1?xMax:x+1);
 		if (y-1>=0)
-			y_min=(y_min<y-1?y_min:y-1);
+			yMin=(yMin<y-1?yMin:y-1);
 		if (y+1<=14)
-			y_max=(y_max>y+1?y_max:y+1);
-		//x_min=0;x_max=14;y_min=0;y_max=14;
+			yMax=(yMax>y+1?yMax:y+1);
+		//xMin=0;xMax=14;yMin=0;yMax=14;
 	}
 
 	//Felix 2015-10-23
@@ -631,94 +634,142 @@ public class Wuziqi extends JPanel{
 	private Piece placeFinderY(int cur){
 		int px=-1,py=-1;
 		int maxVal=-15*15*10000-1;
-		int curXMax=x_max,curXMin=x_min,curYMax=y_max,curYMin=y_min;
-		//System.out.println(x_min+" "+x_max+" "+y_min+" "+y_max);
-		for (int i=x_min;i<=x_max;i++)
-			for (int j=y_min;j<=y_max;j++){
-				if (board[i][j]==-1){
-					board[i][j]=aiColour;
-					resetMaxMin(i,j);
-					int val=minMax(3,i,j,false);
-					board[i][j]=-1;
-					x_max=curXMax;x_min=curXMin;y_max=curYMax;y_min=curYMin;
-					if (val>maxVal){
-						px=i;
-						py=j;
-						maxVal=val;
-					}
+		int curXMax=xMax,curXMin=xMin,curYMax=yMax,curYMin=yMin;
+		//System.out.println(xMin+" "+xMax+" "+yMin+" "+yMax);
+		List<Piece> possibleMoves=heuristicSort(aiColour);
+		for (Piece p:possibleMoves){
+			int i=p.x;
+			int j=p.y;
+			if (findType(i,j,aiColour)==1){
+				px=i;
+				py=j;
+				break;
+			}
+			if (findType(i,j,pColour)==1){
+				px=i;
+				py=j;
+				break;
+			}			
+			if (board[i][j]==-1){
+				board[i][j]=aiColour;
+				resetMaxMin(i,j);
+				//int val=minMax(3,i,j,false);
+				int val=alphaBeta(searchDepth,i,j,-16*16*10000,16*16*10000,false);
+				board[i][j]=-1;
+				xMax=curXMax;xMin=curXMin;yMax=curYMax;yMin=curYMin;
+				if (val>maxVal){
+					px=i;
+					py=j;
+					maxVal=val;
 				}
 			}
+		}
 		return new Piece(px,py,cur);
 	}
 
-	//1 max, 0 min
-	private int minMax(int depth,int px,int py,boolean turn){
+
+	private List<Piece> heuristicSort(int c){
+		List<Piece> movesList=new ArrayList<Piece>();
+		for (int i=xMin;i<=xMax;i++)
+			for (int j=yMin;j<=yMax;j++){
+				if (board[i][j]==-1){
+					int t1=findType(i,j,c);
+					int t2=findType(i,j,1-c);
+					movesList.add(new Piece(i,j,typeScore(t1)+typeScore(t2))); //third arg doesnt matter here
+				}
+			}
+		Collections.sort(movesList);
+		List<Piece> finalList=new ArrayList<Piece>();
+		int n=0;
+		for (Piece p:movesList){
+			finalList.add(p);
+			n++;
+			if (n==12)
+				break;
+		}
+		return finalList;
+	}	
+	//alpha beta pruning
+	private int alphaBeta(int depth,int px,int py,int alpha,int beta,boolean turn){
 		int theMax=15*15*10000;
+		if (findType(px,py,board[px][py])==1)
+			return theMax*(turn?-1:1);
 		if (depth==0){
 			return evalBoard(board[px][py]);
 		}
-		int curXMax=x_max,curXMin=x_min,curYMax=y_max,curYMin=y_min;
+		int curXMax=xMax,curXMin=xMin,curYMax=yMax,curYMin=yMin;
 		if (turn){
 			int maxVal=-1*theMax-1;
-			for (int i=x_min;i<=x_max;i++)
-				for (int j=y_min;j<=y_max;j++){
-					if (board[i][j]==-1){
-						board[i][j]=aiColour;
-						if (findType(i,j,aiColour)==1){
-							board[i][j]=-1;
-							return theMax;
-						}
-						else{
-							resetMaxMin(i,j);
-							int val=minMax(depth-1,i,j,false);
-							board[i][j]=-1;
-							x_max=curXMax;x_min=curXMin;y_max=curYMax;y_min=curYMin;
-							if (val>maxVal)
-								maxVal=val;
-						}
-					}
+			//ordering heuristic
+			//place the best items in front.
+			List<Piece> possibleMoves=heuristicSort(aiColour);
+			for (Piece p:possibleMoves){
+				int i=p.x;
+				int j=p.y;
+				if (board[i][j]==-1){
+					board[i][j]=aiColour;
+					resetMaxMin(i,j);
+					int val=alphaBeta(depth-1,i,j,alpha,beta,false);
+					board[i][j]=-1;
+					xMax=curXMax;xMin=curXMin;yMax=curYMax;yMin=curYMin;
+					if (val>maxVal)
+						maxVal=val;
+					if (val>alpha) //take max of val and alpha
+						alpha=val;
+					if (beta<=alpha) //cut off beta
+						return maxVal;
 				}
+			}
 			return maxVal;
 		}
 		else{
 			int minVal=theMax+1;
-			for (int i=x_min;i<=x_max;i++)
-				for (int j=y_min;j<=y_max;j++){
-					if (board[i][j]==-1){
-						board[i][j]=pColour;
-						
-						if (findType(i,j,pColour)==1){
-							board[i][j]=-1;
-	
-							return -1*theMax;
-						}
-						else{
-							resetMaxMin(i,j);
-							int val=minMax(depth-1,i,j,true);
-							x_max=curXMax;x_min=curXMin;y_max=curYMax;y_min=curYMin;
-							board[i][j]=-1;
-							if (val<minVal)
-								minVal=val;
-						}
-					}
-				}		
+			List<Piece> possibleMoves=heuristicSort(pColour);
+			for (Piece p:possibleMoves){
+				int i=p.x;
+				int j=p.y;
+				if (board[i][j]==-1){
+					board[i][j]=pColour;
+					resetMaxMin(i,j);
+					int val=alphaBeta(depth-1,i,j,alpha,beta,true);
+					xMax=curXMax;xMin=curXMin;yMax=curYMax;yMin=curYMin;
+					board[i][j]=-1;
+					if (val<minVal)
+						minVal=val;
+					if (val<beta)
+						beta=val;
+					if (beta<=alpha)
+						return minVal;
+				}
+			}		
 			return minVal;
-		}
+		}		
 	}
 
 	private int evalBoard(int p){
 		int val=0;
-		for (int i=0;i<15;i++)
-			for (int j=0;j<15;j++)
+		int pCoe=1;
+		int aiCoe=1;
+		if (aiColour==p)
+			aiCoe=2;
+		else
+			pCoe=2;
+		/*
+		for (int i=xMin;i<=xMax;i++)
+			for (int j=yMin;j<=yMax;j++){
 				if (board[i][j]==aiColour)
-					val+=typeScoreY(findType(i,j,aiColour));
+					val+=aiCoe*typeScoreY(findType(i,j,aiColour));
+				else if (board[i][j]==pColour)
+					val-=pCoe*typeScoreY(findType(i,j,pColour));
+			}
+		*/
 		
-		for (int i=0;i<15;i++)
-			for (int j=0;j<15;j++)
-				if (board[i][j]==pColour)
-					val-=typeScoreY(findType(i,j,pColour));
+		for (int i=xMin-1;i<=xMax+1;i++)
+			for (int j=yMin-1;j<=yMax+1;j++){
+				if (getBoard(i,j)==-1)
+					val=val+aiCoe*typeScoreY(findType(i,j,aiColour))-pCoe*typeScoreY(findType(i,j,pColour));
+			}
 		
-		//System.out.println(val);
 		return val;
 	}
 
@@ -810,7 +861,7 @@ public class Wuziqi extends JPanel{
 	 * 12: other
 	 */
 	private int typeScoreY(int c){ //give score according to the type
-		final int typeMark[]={10000,10000,8000,350,300,200,100,25,25,20,5,1};
+		final int typeMark[]={10000,10000,5000,1500,600,200,100,25,25,20,5,1};
 		return typeMark[c-1];
 	}
 

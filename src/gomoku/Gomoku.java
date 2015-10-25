@@ -27,8 +27,8 @@ public class Gomoku extends JFrame implements ActionListener{
     private int difficulty=2;//difficulty (1~3)
     private int goFirst=1;//goFirst?1:0
     boolean playMusic; //flag for playing music or not
-    URL musicFile = getClass().getResource("music.wav"); //the URL to music
-    AudioClip backGroundMusic = java.applet.Applet.newAudioClip(musicFile); //find the music
+    //URL musicFile = getClass().getResource("music.wav"); //the URL to music
+   // AudioClip backGroundMusic = java.applet.Applet.newAudioClip(musicFile); //find the music
     //Menuitemclicked menuAction=new Menuitemclicked();
     Mouseclicked mouseclicked=new Mouseclicked();
     public Gomoku(){
@@ -84,8 +84,8 @@ public class Gomoku extends JFrame implements ActionListener{
 	    	playMusic = true; //default true
 	    }
 	    playMusic=false; //disable music
-	    if (playMusic) //loop if true
-	    	backGroundMusic.loop();
+	    //if (playMusic) //loop if true
+	    	//backGroundMusic.loop();
 
 	    botPanelPanel = new JPanel();
 	    bottomPanel = new InformationPanel(humanVsAi,difficulty,goFirst); //information panel
@@ -255,9 +255,9 @@ public class Gomoku extends JFrame implements ActionListener{
 	    SettingFrame tempFrame = new SettingFrame(null, "Settings"); //tempFrame for setting
 	    if (tempFrame.ok==1){ //if tempFrame oked
 		gamePanel.readSetting();
-		backGroundMusic.stop(); //stop the music every time setting is called
-		if (tempFrame.music==1) //restart music if required
-		    backGroundMusic.loop();
+		//backGroundMusic.stop(); //stop the music every time setting is called
+		//if (tempFrame.music==1) //restart music if required
+		    //backGroundMusic.loop();
 		//read other settings
 		gamePanel.boardColour = new Color(tempFrame.R,tempFrame.G,tempFrame.B);
 		gamePanel.style =tempFrame.style;
