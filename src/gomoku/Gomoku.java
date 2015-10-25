@@ -53,7 +53,7 @@ public class Gomoku extends JFrame implements ActionListener{
 	        mainMenu[0].add(subMenu1[i]);
 	        subMenu1[i].addActionListener(this);
 	    }
-	    for(int i=0;i<2;i++){ //change to i < 3 to add backtrack function
+	    for(int i=0;i<3;i++){ //change to i < 3 to add backtrack function
 	        mainMenu[1].add(subMenu2[i]);
 	        subMenu2[i].addActionListener(this);
 	    }
@@ -271,6 +271,7 @@ public class Gomoku extends JFrame implements ActionListener{
 	    System.exit(1); //exit
 	}
 	if (cmd.equals("backtrack")){ //debuging only
+		
 	    BackTrackDialog d = new BackTrackDialog(null,"debug");
 	    d.setVisible(true);
 	    int x,y;
@@ -279,15 +280,19 @@ public class Gomoku extends JFrame implements ActionListener{
 		int ty1 = gamePanel.findType(x,y,0);
 		int ty2 = gamePanel.findType(x,y,1);
 		System.out.println(x+" "+y);
-		System.out.println("Piece colour: "+gamePanel.getBoard(x,y)+" pt1: "+ty1+" pt2"+ty2);
+		System.out.println("Piece colour: "+gamePanel.getBoard(x,y)+" pt0: "+ty1+" pt1: "+ty2);
 		for (int i=1;i<=4;i++){
 		    int s[]=gamePanel.pieceCounterX(x,y,i,0);
 		    System.out.println("Length0: "+ s[0]+" Close0: "+s[1]);
 		    int ss[]=gamePanel.pieceCounterX(x,y,i,1);
 		    System.out.println("Length1: "+ ss[0]+" Close1: "+ss[1]);
 		}
+
 	    }
 	    d.dispose();
+	    
+		System.out.println("Eval: "+ gamePanel.evalBoard(0));
+		System.out.println("Eval: "+ gamePanel.evalBoard(1));	    
 	}
 	if (cmd.equals("how")){ //how to play part
 	    JOptionPane.showMessageDialog(null,"\t                                                      "

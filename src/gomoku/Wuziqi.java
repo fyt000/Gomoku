@@ -41,7 +41,7 @@ public class Wuziqi extends JPanel{
 	protected boolean reDraw=false;// not really used variable
 	protected int style=0;//style of the board
 	private boolean tie=false;//is it a tie
-	private final static int MAXEVAL=2*15*15*typeScore(1);
+	private final static int MAXEVAL=2*15*15*typeScoreY(1);
 	private HashMap<State,TTEntry> transpositionTable;
 	
 	public Wuziqi(String fileName){ //not used
@@ -640,9 +640,6 @@ public class Wuziqi extends JPanel{
 		return heuristicSort(c,n); //set default to 12
 	}
 	*/
-	private List<Piece> heuristicSort(int c){
-		return heuristicSort(c,12); //set default to 12
-	}
 	private List<Piece> heuristicSort(int c,int n){
 		List<Piece> movesList=new ArrayList<Piece>();
 		for (int i=xMin;i<=xMax;i++)
@@ -650,7 +647,7 @@ public class Wuziqi extends JPanel{
 				if (board[i][j]==-1){
 					int t1=findType(i,j,c);
 					int t2=findType(i,j,1-c);
-					movesList.add(new Piece(i,j,typeScore(t1)+typeScore(t2))); //third arg doesnt matter here
+					movesList.add(new Piece(i,j,typeScoreY(t1)+typeScoreY(t2))); //third arg doesnt matter here
 				}
 			}
 		Collections.sort(movesList);
@@ -670,6 +667,7 @@ public class Wuziqi extends JPanel{
 	private Piece placeFinderY(int cur){
 		List<Piece> possibleMoves=heuristicSort(aiColour,15*15);
 		//check for fives first
+		
 		for (Piece p:possibleMoves){
 			if (findType(p.x,p.y,aiColour)==1)
 				return new Piece(p.x,p.y,cur);
@@ -684,16 +682,21 @@ public class Wuziqi extends JPanel{
 
 	private Piece negaMaxP(int depth, int px,int py,int alpha,int beta,boolean turn){
 		int theMax=MAXEVAL;
-		int coe=(turn?1:-1);
 		int colour=(turn?aiColour:pColour);
-		if (getBoard(px,py)!=3&&getBoard(px,py)!=-1&&findType(px,py,board[px][py])==1){
-			return new Piece(px,py,theMax*coe);
-		}
-		if (depth==0){
+		int status=checkWin();
+		int coe=(turn?1:-1);
+		//run eval for current player
+		
+		if (status==1)
+			return new Piece(px,py,coe*(MAXEVAL));
+		else if (status==2)
+			return new Piece(px,py,coe*-(MAXEVAL));
+		
+		if (depth==0||status==1||status==2){
 			return new Piece(px,py,coe*evalBoard(colour));
 		}
 		int curXMax=xMax,curXMin=xMin,curYMax=yMax,curYMin=yMin;
-		List<Piece> possibleMoves=heuristicSort(colour,12);
+		List<Piece> possibleMoves=heuristicSort(colour,25);
 		int bestVal=-1*theMax;
 		int bx=-1,by=-1;
 		for (Piece p:possibleMoves){
@@ -703,17 +706,17 @@ public class Wuziqi extends JPanel{
 				board[i][j]=colour;
 				resetMaxMin(i,j);
 				int val=-1*negaMaxP(depth-1,i,j,-1*beta,-1*alpha,!turn).side; //use side to store value
+				//System.out.println(val);
 				board[i][j]=-1;
 				xMax=curXMax;xMin=curXMin;yMax=curYMax;yMin=curYMin;
 				//bestVal=bestVal<val?val:bestVal;
-				if (bestVal<val){
+				if (bestVal<=val){
+					
 					bestVal=val;
 					bx=i;by=j;
-				}
-				if (depth==3)
-					System.out.println(bx+" "+by+" "+val);				
+				}			
 				alpha=alpha<val?val:alpha;
-				if (alpha>=beta)
+				if (alpha>beta)
 					break;
 			}
 		}
@@ -721,16 +724,29 @@ public class Wuziqi extends JPanel{
 		return new Piece(bx,by,bestVal);
 	}
 
-	private int evalBoard(int p){
+	private int checkWin(){
+		for (int i=0;i<15;i++)
+			for (int j=0;j<15;j++)
+				if (board[i][j]==aiColour&&findType(i,j,aiColour)==1)
+					return 1;
+				else if (board[i][j]==pColour&&findType(i,j,pColour)==1)
+					return 2;
+		return 0;
+	}
+	
+	public int evalBoard(int p){
 		int val=0;
 		int pCoe=1;
 		int aiCoe=1;
 		/*
-		if (aiColour==p)
-			aiCoe=2;
-		else
-			pCoe=2;
-		*/
+		if (aiColour==p){
+			aiCoe=1;
+			pCoe=-1;
+		}
+		else{
+			aiCoe=-1;
+			pCoe=1;
+		}*/
 		/*
 		for (int i=xMin;i<=xMax;i++)
 			for (int j=yMin;j<=yMax;j++){
@@ -837,8 +853,8 @@ public class Wuziqi extends JPanel{
 	 * 11: half open 2
 	 * 12: other
 	 */
-	private int typeScoreY(int c){ //give score according to the type
-		final int typeMark[]={10000,10000,5000,1500,600,200,100,25,25,20,5,1};
+	private static int typeScoreY(int c){ //give score according to the type
+		final int typeMark[]={500000,10000,5000,1500,600,200,100,25,25,20,5,1};
 		return typeMark[c-1];
 	}
 
