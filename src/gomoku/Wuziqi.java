@@ -42,6 +42,7 @@ public class Wuziqi extends JPanel{
 	protected int style=0;//style of the board
 	private boolean tie=false;//is it a tie
 	private final static int MAXEVAL=2*15*15*typeScore(1);
+	private HashMap<State,TTEntry> transpositionTable;
 	
 	public Wuziqi(String fileName){ //not used
 
@@ -66,6 +67,7 @@ public class Wuziqi extends JPanel{
 			pColour=1;
 			aiColour=0;
 		}
+		transpositionTable=new HashMap<State,TTEntry>();
 		difficulty=dRate;
 		searchDepth=dRate*2-1; //double the difficulty
 		board=new int[N][N];
@@ -407,7 +409,7 @@ public class Wuziqi extends JPanel{
 		g.setColor(Color.RED);
 		g.drawLine(x1p,y1p,x2p,y2p);
 	}
-
+	
 	public boolean isWin(int x,int y){
 		if (totalTurns==225){
 			JOptionPane
@@ -630,23 +632,34 @@ public class Wuziqi extends JPanel{
 		//xMin=0;xMax=14;yMin=0;yMax=14;
 	}
 
+	/*
+	private List<Piece> heuristicSort(int c,boolean full){
+		int n=12;
+		if (full)
+			n=15*15;
+		return heuristicSort(c,n); //set default to 12
+	}
+	*/
 	private List<Piece> heuristicSort(int c){
+		return heuristicSort(c,12); //set default to 12
+	}
+	private List<Piece> heuristicSort(int c,int n){
 		List<Piece> movesList=new ArrayList<Piece>();
 		for (int i=xMin;i<=xMax;i++)
 			for (int j=yMin;j<=yMax;j++){
 				if (board[i][j]==-1){
 					int t1=findType(i,j,c);
 					int t2=findType(i,j,1-c);
-					movesList.add(new Piece(i,j,2*typeScore(t1)+typeScore(t2))); //third arg doesnt matter here
+					movesList.add(new Piece(i,j,typeScore(t1)+typeScore(t2))); //third arg doesnt matter here
 				}
 			}
 		Collections.sort(movesList);
 		List<Piece> finalList=new ArrayList<Piece>();
-		int n=0;
+		int count=0;
 		for (Piece p:movesList){
 			finalList.add(p);
-			n++;
-			if (n==12) //this is not optimal
+			count++;
+			if (count==n) //this is not optimal
 				break;
 		}
 		return finalList;
@@ -655,146 +668,69 @@ public class Wuziqi extends JPanel{
 	//Felix 2015-10-23
 	//rewriting the whole algorithm
 	private Piece placeFinderY(int cur){
-		int px=-1,py=-1;
-		int maxVal=-1*MAXEVAL;
-		int curXMax=xMax,curXMin=xMin,curYMax=yMax,curYMin=yMin;
-		List<Piece> possibleMoves=heuristicSort(aiColour);
-		int alpha=maxVal;
+		List<Piece> possibleMoves=heuristicSort(aiColour,15*15);
+		//check for fives first
 		for (Piece p:possibleMoves){
-			int i=p.x;
-			int j=p.y;
-			if (findType(i,j,aiColour)==1){
-				px=i;
-				py=j;
-				break;
-			}
-			if (findType(i,j,pColour)==1){
-				px=i;
-				py=j;
-				break;
-			}
-			if (board[i][j]==-1){
-				board[i][j]=aiColour;
-				resetMaxMin(i,j);
-				//int val=alphaBeta(searchDepth,i,j,alpha,MAXEVAL,false);
-				int val=-negaMax(searchDepth,i,j,-1*MAXEVAL,-1*alpha,false);
-				board[i][j]=-1;
-				xMax=curXMax;xMin=curXMin;yMax=curYMax;yMin=curYMin;
-				if (val>maxVal){
-					px=i;
-					py=j;
-					maxVal=val;
-				}
-				alpha=alpha<val?val:alpha;		
-			}
+			if (findType(p.x,p.y,aiColour)==1)
+				return new Piece(p.x,p.y,cur);
 		}
-		return new Piece(px,py,cur);
+		for (Piece p:possibleMoves){
+			if (findType(p.x,p.y,pColour)==1)
+				return new Piece(p.x,p.y,cur);
+		}
+		Piece p=negaMaxP(searchDepth,-1,-1,-1*MAXEVAL,MAXEVAL,true);
+		return new Piece(p.x,p.y,aiColour);
 	}
 
-	private int negaMax(int depth, int px,int py,int alpha,int beta,boolean turn){
+	private Piece negaMaxP(int depth, int px,int py,int alpha,int beta,boolean turn){
 		int theMax=MAXEVAL;
-		int coe=(turn?-1:1);
+		int coe=(turn?1:-1);
 		int colour=(turn?aiColour:pColour);
-		if (findType(px,py,board[px][py])==1)
-			return theMax*coe;
+		if (getBoard(px,py)!=3&&getBoard(px,py)!=-1&&findType(px,py,board[px][py])==1){
+			return new Piece(px,py,theMax*coe);
+		}
 		if (depth==0){
-			return evalBoard(board[px][py]);
+			return new Piece(px,py,coe*evalBoard(colour));
 		}
 		int curXMax=xMax,curXMin=xMin,curYMax=yMax,curYMin=yMin;
-		List<Piece> possibleMoves=heuristicSort(colour);
+		List<Piece> possibleMoves=heuristicSort(colour,12);
 		int bestVal=-1*theMax;
+		int bx=-1,by=-1;
 		for (Piece p:possibleMoves){
 			int i=p.x;
 			int j=p.y;
 			if (board[i][j]==-1){
 				board[i][j]=colour;
 				resetMaxMin(i,j);
-				int val=-1*negaMax(depth-1,i,j,-1*beta,-1*alpha,!turn);
+				int val=-1*negaMaxP(depth-1,i,j,-1*beta,-1*alpha,!turn).side; //use side to store value
 				board[i][j]=-1;
 				xMax=curXMax;xMin=curXMin;yMax=curYMax;yMin=curYMin;
-				bestVal=bestVal<val?val:bestVal;
+				//bestVal=bestVal<val?val:bestVal;
+				if (bestVal<val){
+					bestVal=val;
+					bx=i;by=j;
+				}
+				if (depth==3)
+					System.out.println(bx+" "+by+" "+val);				
 				alpha=alpha<val?val:alpha;
 				if (alpha>=beta)
 					break;
 			}
 		}
-		return bestVal;
-	}
-	
-	//alpha beta pruning
-	private int alphaBeta(int depth,int px,int py,int alpha,int beta,
-			boolean turn){
-		int theMax=MAXEVAL;
-		if (findType(px,py,board[px][py])==1)
-			return theMax*(turn?-1:1);
-		if (depth==0){
-			return evalBoard(board[px][py]);
-		}
-		int curXMax=xMax,curXMin=xMin,curYMax=yMax,curYMin=yMin;
-		if (turn){
-			int maxVal=-1*theMax;
-			//ordering heuristic
-			//place the best items in front.
-			List<Piece> possibleMoves=heuristicSort(aiColour);
-			for (Piece p:possibleMoves){
-				int i=p.x;
-				int j=p.y;
-				if (board[i][j]==-1){
-					board[i][j]=aiColour;
-					resetMaxMin(i,j);
-					int val=alphaBeta(depth-1,i,j,alpha,beta,false);
-					board[i][j]=-1;
-					xMax=curXMax;
-					xMin=curXMin;
-					yMax=curYMax;
-					yMin=curYMin;
-					if (val>maxVal)
-						maxVal=val;
-					if (val>alpha) //take max of val and alpha
-						alpha=val;
-					if (beta<=alpha) //cut off beta
-						return maxVal;
-				}
-			}
-			return maxVal;
-		}
-		else{
-			int minVal=theMax;
-			List<Piece> possibleMoves=heuristicSort(pColour);
-			for (Piece p:possibleMoves){
-				int i=p.x;
-				int j=p.y;
-				if (board[i][j]==-1){
-					board[i][j]=pColour;
-					resetMaxMin(i,j);
-					int val=alphaBeta(depth-1,i,j,alpha,beta,true);
-					xMax=curXMax;
-					xMin=curXMin;
-					yMax=curYMax;
-					yMin=curYMin;
-					board[i][j]=-1;
-					if (val<minVal)
-						minVal=val;
-					if (val<beta)
-						beta=val;
-					if (beta<=alpha)
-						return minVal;
-				}
-			}
-			return minVal;
-		}
+
+		return new Piece(bx,by,bestVal);
 	}
 
 	private int evalBoard(int p){
 		int val=0;
 		int pCoe=1;
 		int aiCoe=1;
-		
+		/*
 		if (aiColour==p)
 			aiCoe=2;
 		else
 			pCoe=2;
-		
+		*/
 		/*
 		for (int i=xMin;i<=xMax;i++)
 			for (int j=yMin;j<=yMax;j++){
