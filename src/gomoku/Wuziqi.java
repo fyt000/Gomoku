@@ -69,7 +69,7 @@ public class Wuziqi extends JPanel{
 		}
 		transpositionTable=new HashMap<State,TTEntry>();
 		difficulty=dRate;
-		searchDepth=dRate*2-1; //double the difficulty
+		searchDepth=dRate*2; //double the difficulty
 		board=new int[N][N];
 		clearBoard(); //clear the board/initialize
 		curTurn=true;//balck go first
@@ -677,7 +677,8 @@ public class Wuziqi extends JPanel{
 			if (findType(p.x,p.y,pColour)==1)
 				return new Piece(p.x,p.y,cur);
 		}*/
-		Piece p=negaMaxP(4,-1,-1,-1*MAXEVAL,MAXEVAL,true);
+		//searchDepth has to be even..
+		Piece p=negaMaxP(searchDepth,-1,-1,-1*MAXEVAL,MAXEVAL,true);
 		return new Piece(p.x,p.y,aiColour);
 	}
 
@@ -698,8 +699,9 @@ public class Wuziqi extends JPanel{
 			int j=p.y;
 			if (board[i][j]==-1){
 				if (findType(i,j,colour)==1){
-					System.out.println("i j "+i+" "+j);
-					return new Piece(i,j,20*(typeScore(1)+depth*100));
+					//System.out.println("i j "+i+" "+j);
+					return new Piece(i,j,theMax);
+					//return new Piece(i,j,20*(typeScore(1)+depth*100));
 				}
 				board[i][j]=colour;
 				resetMaxMin(i,j);
