@@ -665,6 +665,7 @@ public class Wuziqi extends JPanel{
 	//Felix 2015-10-23
 	//rewriting the whole algorithm
 	private Piece placeFinderY(int cur){
+		/*
 		List<Piece> possibleMoves=heuristicSort(aiColour,15*15);
 		//check for fives first
 		
@@ -675,25 +676,18 @@ public class Wuziqi extends JPanel{
 		for (Piece p:possibleMoves){
 			if (findType(p.x,p.y,pColour)==1)
 				return new Piece(p.x,p.y,cur);
-		}
-		Piece p=negaMaxP(searchDepth,-1,-1,-1*MAXEVAL,MAXEVAL,true);
+		}*/
+		Piece p=negaMaxP(4,-1,-1,-1*MAXEVAL,MAXEVAL,true);
 		return new Piece(p.x,p.y,aiColour);
 	}
 
-	private Piece negaMaxP(int depth, int px,int py,int alpha,int beta,boolean turn){
+	private Piece negaMaxP(int depth,int px,int py,int alpha,int beta,boolean turn){
 		int theMax=MAXEVAL;
 		int colour=(turn?aiColour:pColour);
-		int status=checkWin();
 		int coe=(turn?1:-1);
 		//run eval for current player
-		
-		if (status==1)
-			return new Piece(px,py,coe*(MAXEVAL));
-		else if (status==2)
-			return new Piece(px,py,coe*-(MAXEVAL));
-		
-		if (depth==0||status==1||status==2){
-			return new Piece(px,py,coe*evalBoard(colour));
+		if (depth==0){
+			return new Piece(px,py,evalBoard(colour));
 		}
 		int curXMax=xMax,curXMin=xMin,curYMax=yMax,curYMin=yMin;
 		List<Piece> possibleMoves=heuristicSort(colour,25);
@@ -703,6 +697,10 @@ public class Wuziqi extends JPanel{
 			int i=p.x;
 			int j=p.y;
 			if (board[i][j]==-1){
+				if (findType(i,j,colour)==1){
+					System.out.println("i j "+i+" "+j);
+					return new Piece(i,j,20*(typeScore(1)+depth*100));
+				}
 				board[i][j]=colour;
 				resetMaxMin(i,j);
 				int val=-1*negaMaxP(depth-1,i,j,-1*beta,-1*alpha,!turn).side; //use side to store value
@@ -710,13 +708,12 @@ public class Wuziqi extends JPanel{
 				board[i][j]=-1;
 				xMax=curXMax;xMin=curXMin;yMax=curYMax;yMin=curYMin;
 				//bestVal=bestVal<val?val:bestVal;
-				if (bestVal<=val){
-					
+				if (bestVal<=val){	
 					bestVal=val;
 					bx=i;by=j;
 				}			
 				alpha=alpha<val?val:alpha;
-				if (alpha>beta)
+				if (alpha>=beta)
 					break;
 			}
 		}
@@ -724,20 +721,14 @@ public class Wuziqi extends JPanel{
 		return new Piece(bx,by,bestVal);
 	}
 
-	private int checkWin(){
-		for (int i=0;i<15;i++)
-			for (int j=0;j<15;j++)
-				if (board[i][j]==aiColour&&findType(i,j,aiColour)==1)
-					return 1;
-				else if (board[i][j]==pColour&&findType(i,j,pColour)==1)
-					return 2;
-		return 0;
-	}
-	
 	public int evalBoard(int p){
 		int val=0;
 		int pCoe=1;
 		int aiCoe=1;
+		if ((curTurn?0:1)==pColour) //if player's turn
+			pCoe=2; //set to double
+		else
+			aiCoe=2;
 		/*
 		if (aiColour==p){
 			aiCoe=1;
