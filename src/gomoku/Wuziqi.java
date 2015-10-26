@@ -478,146 +478,90 @@ public class Wuziqi extends JPanel{
 	}
 
 	protected void placePieceAI(){
+		
 		wait=true;
 		Piece a=new Piece(1,1,1);
 		/*
 		info.goWait();
 		info.repaint();
 		*/
-		if (difficulty==1){
-			a=placeFinder();
-			placePiece(a.x,a.y,curTurn);
-		}
-		else{ //find 5 for ai first. If found exit immediately
-			for (int x=0;x<14;x++)
-				for (int y=0;y<14;y++){
-					if (board[x][y]==-1){
-						int t=findType(x,y,aiColour);
-						if (t==1){
-							//System.out.println("here "+x+" "+y);
-							placePiece(x,y,curTurn);
-							wait=false;
-							return;
-						}
-					}
-				}
-
-			if (totalTurns==2&&aiColour==0){ //ai go first, third step determined here
-				if (board[6][6]==pColour||board[8][6]==pColour
-						||board[6][8]==pColour||board[8][8]==pColour){
-					//gaining great advantage at the start, when white placing on diagonals
-					if (board[6][6]==pColour) //determine which case
-						a=new Piece(6,8,curTurn);
-					else if (board[6][8]==pColour)
-						a=new Piece(6,6,curTurn);
-					else if (board[8][6]==pColour)
-						a=new Piece(8,8,curTurn);
-					else if (board[8][8]==pColour)
-						a=new Piece(8,6,curTurn);
-				}
-				else if (board[7][8]==pColour||board[7][6]==pColour
-						||board[6][7]==pColour||board[8][7]==pColour){
-					//when white is on horizontal/vertical places
-					if (board[7][8]==pColour) //determine the case
-						a=new Piece(6,8,curTurn);
-					else if (board[7][6]==pColour)
-						a=new Piece(6,6,curTurn);
-					else if (board[6][7]==pColour)
-						a=new Piece(6,8,curTurn);
-					else if (board[8][7]==pColour)
-						a=new Piece(8,6,curTurn);
-				}
-				else
-					a=placeFinderY((curTurn?0:1));
-			}
-			else if (totalTurns==1&&aiColour==1&&(difficulty==2||difficulty==3)){ //place piece near first piece
-				wait=false;
-				int tx,ty;
-				tx=list.get(0).x;
-				ty=list.get(0).y;
-				int dX[]={1,1,-1,0}; //xy dir, vertical,"\"diag, horizontal, "/" diag 
-				int dY[]={1,0,1,1};
-				for (int i=0;i<=3;i++){
-					if (getBoard(tx+dX[i],ty+dY[i])!=3&&randomInt(1,5)<=2){ //randomly place the piece
-						placePiece(tx+dX[i],ty+dY[i],curTurn);
-						return;
-					}
-					else if (getBoard(tx-dX[i],ty-dY[i])!=3
-							&&randomInt(1,6-i)<=2){
-						placePiece(tx-dX[i],ty-dY[i],curTurn);
-						return;
-					}
-				}
-				for (int i=1;i<=4;i++){ //if still not returned
-					if (getBoard(tx+dX[i],ty+dY[i])!=3){
-						placePiece(tx+dX[i],ty+dY[i],curTurn);
-						return;
-					}
-					else if (getBoard(tx-dX[i],ty-dY[i])!=3){
-						placePiece(tx-dX[i],ty-dY[i],curTurn);
-						return;
-					}
-				}
-			}
-			else{
-				//a=placeFinderX((curTurn?0:1));
-				a=placeFinderY((curTurn?0:1));
-			}
-			placePiece(a.x,a.y,curTurn);
-		}
-		wait=false;
-	}
-
-	//old algorithm from 2010
-	private Piece placeFinder(){
-		int xyValue[][]=new int[15][15];
-		for (int x=0;x<15;x++)
-			for (int y=0;y<15;y++)
-				xyValue[x][y]=0;
-		for (int x=0;x<15;x++)
-			//loop through all intersections
-			for (int y=0;y<15;y++)
+		//find 5 for ai first. If found exit immediately
+		for (int x=0;x<14;x++)
+			for (int y=0;y<14;y++){
 				if (board[x][y]==-1){
-					int type=findType(x,y,aiColour);
-					xyValue[x][y]=typeScore(type)*2;
-					type=findType(x,y,pColour);
-					int s=typeScore(type);
-					xyValue[x][y]+=s; //add the score up
-					board[x][y]=-1;
-				}
-		int max=2;
-		Piece sameValues[]=new Piece[255];//15*15=225
-		int upper=-1;
-		for (int x=0;x<15;x++)
-			//find the max value, and store its xy
-			for (int y=0;y<15;y++){
-				if (xyValue[x][y]>max){
-					max=xyValue[x][y];
+					int t=findType(x,y,aiColour);
+					if (t==1){
+						//System.out.println("here "+x+" "+y);
+						placePiece(x,y,curTurn);
+						wait=false;
+						return;
+					}
 				}
 			}
-		for (int x=0;x<15;x++)
-			for (int y=0;y<15;y++){
-				if (xyValue[x][y]==max){ //add the xy of same score to array
-					sameValues[++upper]=new Piece(x,y,true); //only to store xy, does not matter to be true or false
-				}
-			}
-		/*
-		for (int x=0;x<15;x++){
-		    for (int y=0;y<15;y++)
-			System.out.print(xyValue[y][x]+" ");
-		    System.out.print("\n");
-		}
-		*/
-		Piece theOne=sameValues[randomInt(0,upper)]; //random pick one
-		return theOne;
-	}
 
-	//********************min-max search + alpha-beta prune******************************//
-	//for difficulty > 1
-	private int findTypeX(int a,int b,int s){
-		//int t;
-		//t=findType(a,b,s);
-		return findType(a,b,s);
+		if (totalTurns==2&&aiColour==0){ //ai go first, third step determined here
+			if (board[6][6]==pColour||board[8][6]==pColour
+					||board[6][8]==pColour||board[8][8]==pColour){
+				//gaining great advantage at the start, when white placing on diagonals
+				if (board[6][6]==pColour) //determine which case
+					a=new Piece(6,8,curTurn);
+				else if (board[6][8]==pColour)
+					a=new Piece(6,6,curTurn);
+				else if (board[8][6]==pColour)
+					a=new Piece(8,8,curTurn);
+				else if (board[8][8]==pColour)
+					a=new Piece(8,6,curTurn);
+			}
+			else if (board[7][8]==pColour||board[7][6]==pColour
+					||board[6][7]==pColour||board[8][7]==pColour){
+				//when white is on horizontal/vertical places
+				if (board[7][8]==pColour) //determine the case
+					a=new Piece(6,8,curTurn);
+				else if (board[7][6]==pColour)
+					a=new Piece(6,6,curTurn);
+				else if (board[6][7]==pColour)
+					a=new Piece(6,8,curTurn);
+				else if (board[8][7]==pColour)
+					a=new Piece(8,6,curTurn);
+			}
+			else
+				a=placeFinderY((curTurn?0:1));
+		}
+		else if (totalTurns==1&&aiColour==1&&(difficulty==2||difficulty==3)){ //place piece near first piece
+			wait=false;
+			int tx,ty;
+			tx=list.get(0).x;
+			ty=list.get(0).y;
+			int dX[]={1,1,-1,0}; //xy dir, vertical,"\"diag, horizontal, "/" diag 
+			int dY[]={1,0,1,1};
+			for (int i=0;i<=3;i++){
+				if (getBoard(tx+dX[i],ty+dY[i])!=3&&randomInt(1,5)<=2){ //randomly place the piece
+					placePiece(tx+dX[i],ty+dY[i],curTurn);
+					return;
+				}
+				else if (getBoard(tx-dX[i],ty-dY[i])!=3
+						&&randomInt(1,6-i)<=2){
+					placePiece(tx-dX[i],ty-dY[i],curTurn);
+					return;
+				}
+			}
+			for (int i=1;i<=4;i++){ //if still not returned
+				if (getBoard(tx+dX[i],ty+dY[i])!=3){
+					placePiece(tx+dX[i],ty+dY[i],curTurn);
+					return;
+				}
+				else if (getBoard(tx-dX[i],ty-dY[i])!=3){
+					placePiece(tx-dX[i],ty-dY[i],curTurn);
+					return;
+				}
+			}
+		}
+		else{
+			//a=placeFinderX((curTurn?0:1));
+			a=placeFinderY((curTurn?0:1));
+		}
+		placePiece(a.x,a.y,curTurn);
+		wait=false;
 	}
 
 	public void resetMaxMin(int x,int y){
@@ -682,16 +626,52 @@ public class Wuziqi extends JPanel{
 		return new Piece(p.x,p.y,aiColour);
 	}
 
+	
+	//2015-10-25: going to implement transposition table
+	//http://homepages.cwi.nl/~paulk/theses/Carolus.pdf
+	//transposition table does not seem to work
+	//it seems non of the state are visited twice
 	private Piece negaMaxP(int depth,int px,int py,int alpha,int beta,boolean turn){
+		
+		
+		State key=new State(board);
+		//System.out.println(key.hashCode());
+		TTEntry tte=transpositionTable.get(key);
+		if (tte!=null){ //not sure if I actually need depth
+			//System.out.println(tte.eval.x+" "+tte.eval.y+" "+tte.eval.side);
+			if (tte.type==TTEntry.EXACT){
+				return tte.eval;
+			}
+			if (tte.type==TTEntry.LOWERBOUND&&tte.eval.side>alpha)
+				alpha=tte.eval.side; 
+			else if (tte.type==TTEntry.UPPERBOUND&&tte.eval.side<beta)
+				beta=tte.eval.side;
+			if (alpha>=beta)
+				return tte.eval;
+		}
+		
 		int theMax=MAXEVAL;
 		int colour=(turn?aiColour:pColour);
 		int coe=(turn?1:-1);
 		//run eval for current player
-		if (depth==0){
-			return new Piece(px,py,evalBoard(colour));
+		//
+		if (depth==0){ //end game does not work here. I need to figure out why does it not work
+			int val=evalBoard(colour);
+			Piece p=new Piece(px,py,val);
+			TTEntry ntte;
+			if (p.side<=alpha)
+				ntte=new TTEntry(p,depth,TTEntry.LOWERBOUND);
+			else if (p.side>=beta)
+				ntte=new TTEntry(p,depth,TTEntry.UPPERBOUND);
+			else
+				ntte=new TTEntry(p,depth,TTEntry.EXACT);					
+			
+			transpositionTable.put(key,ntte);
+			//System.out.println(transpositionTable);
+			return p;
 		}
 		int curXMax=xMax,curXMin=xMin,curYMax=yMax,curYMin=yMin;
-		List<Piece> possibleMoves=heuristicSort(colour,25);
+		List<Piece> possibleMoves=heuristicSort(colour,15);
 		int bestVal=-1*theMax;
 		int bx=-1,by=-1;
 		for (Piece p:possibleMoves){
@@ -699,8 +679,19 @@ public class Wuziqi extends JPanel{
 			int j=p.y;
 			if (board[i][j]==-1){
 				if (findType(i,j,colour)==1){
-					//System.out.println("i j "+i+" "+j);
-					return new Piece(i,j,theMax);
+					Piece rp=new Piece(i,j,theMax);
+					TTEntry ntte;
+					if (rp.side<=alpha)
+						ntte=new TTEntry(rp,depth,TTEntry.LOWERBOUND);
+					else if (rp.side>=beta)
+						ntte=new TTEntry(rp,depth,TTEntry.UPPERBOUND);
+					else
+						ntte=new TTEntry(rp,depth,TTEntry.EXACT);
+					board[i][j]=colour;
+					State nkey=new State(board);
+					transpositionTable.put(nkey,ntte);
+					board[i][j]=-1;
+					return rp;
 					//return new Piece(i,j,20*(typeScore(1)+depth*100));
 				}
 				board[i][j]=colour;
@@ -719,8 +710,19 @@ public class Wuziqi extends JPanel{
 					break;
 			}
 		}
+		Piece rePiece=new Piece(bx,by,bestVal);
+		
+		TTEntry ntte;
+		if (bestVal<=alpha)
+			ntte=new TTEntry(rePiece,depth,TTEntry.LOWERBOUND);
+		else if (bestVal>=beta)
+			ntte=new TTEntry(rePiece,depth,TTEntry.UPPERBOUND);
+		else
+			ntte=new TTEntry(rePiece,depth,TTEntry.EXACT);
+		transpositionTable.put(key,ntte);
+		
 
-		return new Piece(bx,by,bestVal);
+		return rePiece;
 	}
 
 	public int evalBoard(int p){
