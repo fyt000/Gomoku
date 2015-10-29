@@ -144,21 +144,18 @@ public class Wuziqi extends JPanel{
 		curTurn=nexTurn; //switch turn when a piece is placed
 		nexTurn=!nexTurn; //next turn swith as well
 		info.updateInfo(); //update the info in informationPanel
-		/*
-		if (totalTurns==1&&goFirst){ //set the search border
+		if (totalTurns==1){ //set the search border
 			if (x-1>=0)
 				xMin=x-1;
-			if (x-1<=15)
+			if (x+1<=14)
 				xMax=x+1;
 			if (y-1>=0)
 				yMin=y-1;
-			if (y-1<=15)
+			if (y+1<=14)
 				yMax=y+1;
 		}
-		else{
+		else
 			resetMaxMin(x,y);
-		}*/
-		resetMaxMin(x,y);
 		//revalidate();
 		//validate();
 		if (!wait&&difficulty>1&&totalTurns>1) //if player placign the piece
@@ -498,7 +495,8 @@ public class Wuziqi extends JPanel{
 					}
 				}
 			}
-
+		
+		//random the first step
 		if (totalTurns==2&&aiColour==0){ //ai go first, third step determined here
 			if (board[6][6]==pColour||board[8][6]==pColour
 					||board[6][8]==pColour||board[8][8]==pColour){
@@ -556,10 +554,9 @@ public class Wuziqi extends JPanel{
 				}
 			}
 		}
-		else{
-			//a=placeFinderX((curTurn?0:1));
+		else
 			a=placeFinderY((curTurn?0:1));
-		}
+		
 		placePiece(a.x,a.y,curTurn);
 		wait=false;
 	}
@@ -591,7 +588,7 @@ public class Wuziqi extends JPanel{
 				if (board[i][j]==-1){
 					int t1=findType(i,j,c);
 					int t2=findType(i,j,1-c);
-					movesList.add(new Piece(i,j,typeScoreY(t1)+typeScoreY(t2))); //third arg doesnt matter here
+					movesList.add(new Piece(i,j,2*typeScoreY(t1)+typeScoreY(t2))); //third arg doesnt matter here
 				}
 			}
 		Collections.sort(movesList);
@@ -606,10 +603,9 @@ public class Wuziqi extends JPanel{
 		return finalList;
 	}	
 	
-	//Felix 2015-10-23
-	//rewriting the whole algorithm
+
 	private Piece placeFinderY(int cur){
-		/*
+		
 		List<Piece> possibleMoves=heuristicSort(aiColour,15*15);
 		//check for fives first
 		
@@ -620,26 +616,26 @@ public class Wuziqi extends JPanel{
 		for (Piece p:possibleMoves){
 			if (findType(p.x,p.y,pColour)==1)
 				return new Piece(p.x,p.y,cur);
-		}*/
+		}
 		//searchDepth has to be even..
 		Piece p=negaMaxP(searchDepth,-1,-1,-1*MAXEVAL,MAXEVAL,true);
 		return new Piece(p.x,p.y,aiColour);
 	}
 
 	
-	//2015-10-25: going to implement transposition table
+	//negamax with transposition table
 	//http://homepages.cwi.nl/~paulk/theses/Carolus.pdf
-	//transposition table does not seem to work
-	//it seems non of the state are visited twice
+	//https://en.wikipedia.org/wiki/Negamax
 	private Piece negaMaxP(int depth,int px,int py,int alpha,int beta,boolean turn){
 		
 		
 		State key=new State(board);
 		//System.out.println(key.hashCode());
 		TTEntry tte=transpositionTable.get(key);
-		if (tte!=null){ //not sure if I actually need depth
+		if (tte!=null&&tte.depth>=depth){ //not sure if I actually need depth
 			//System.out.println(tte.eval.x+" "+tte.eval.y+" "+tte.eval.side);
 			if (tte.type==TTEntry.EXACT){
+				//System.out.println(tte.eval.side+" "+tte.eval.x+" "+tte.eval.y);
 				return tte.eval;
 			}
 			if (tte.type==TTEntry.LOWERBOUND&&tte.eval.side>alpha)
@@ -671,7 +667,16 @@ public class Wuziqi extends JPanel{
 			return p;
 		}
 		int curXMax=xMax,curXMin=xMin,curYMax=yMax,curYMin=yMin;
-		List<Piece> possibleMoves=heuristicSort(colour,15);
+		List<Piece> possibleMoves=heuristicSort(colour,15*15);
+		//only examine the x best piece of the current board, otherwise it would take way too long
+		//full board computation speed is acceptable for intermediate
+		/*
+		if (searchDepth==depth){
+			System.out.println("optimal pieces:");
+			for (Piece p:possibleMoves){
+				System.out.println(p.x+" "+p.y);
+			}
+		}*/
 		int bestVal=-1*theMax;
 		int bx=-1,by=-1;
 		for (Piece p:possibleMoves){
@@ -692,7 +697,6 @@ public class Wuziqi extends JPanel{
 					transpositionTable.put(nkey,ntte);
 					board[i][j]=-1;
 					return rp;
-					//return new Piece(i,j,20*(typeScore(1)+depth*100));
 				}
 				board[i][j]=colour;
 				resetMaxMin(i,j);
@@ -729,28 +733,11 @@ public class Wuziqi extends JPanel{
 		int val=0;
 		int pCoe=1;
 		int aiCoe=1;
-		if ((curTurn?0:1)==pColour) //if player's turn
+//		/(curTurn?0:1)
+		if (p==pColour) //if player's turn
 			pCoe=2; //set to double
 		else
 			aiCoe=2;
-		/*
-		if (aiColour==p){
-			aiCoe=1;
-			pCoe=-1;
-		}
-		else{
-			aiCoe=-1;
-			pCoe=1;
-		}*/
-		/*
-		for (int i=xMin;i<=xMax;i++)
-			for (int j=yMin;j<=yMax;j++){
-				if (board[i][j]==aiColour)
-					val+=aiCoe*typeScoreY(findType(i,j,aiColour));
-				else if (board[i][j]==pColour)
-					val-=pCoe*typeScoreY(findType(i,j,pColour));
-			}
-		*/
 
 		for (int i=xMin-1;i<=xMax+1;i++)
 			for (int j=yMin-1;j<=yMax+1;j++){
@@ -849,7 +836,8 @@ public class Wuziqi extends JPanel{
 	 * 12: other
 	 */
 	private static int typeScoreY(int c){ //give score according to the type
-		final int typeMark[]={500000,10000,5000,1500,600,200,100,25,25,20,5,1};
+		//						1		2	3	4	 5	 6	 7	 8	9  10 11 12	
+		final int typeMark[]={500000,10000,5000,1200,600,180,180,20,55,35,5,1};
 		return typeMark[c-1];
 	}
 
